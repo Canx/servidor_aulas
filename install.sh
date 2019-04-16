@@ -305,6 +305,17 @@ echo "exit 0">>$destino
 
 echo "   Hecho"
 
+## Instalación de netdata
+echo "    Instalación de netdata"
+bash <(curl -Ss https://my-netdata.io/kickstart.sh)
+
+## Instalación de fireqos
+echo "    Instalación de fireqos"
+sudo add-apt-repository ppa:andvgal/firehol-bpo
+sudo apt-get update
+sudo apt-get install fireqos
+
+
 
 ###########################################################################################################################
 echo ""
