@@ -1,8 +1,16 @@
 #!/bin/bash
+# PARAMETROS
 hosts="hosts.txt"
 scan="/tmp/scan.txt"
 dhcp="alumnos.dhcp"
-net="192.168.0.0/24"
+hostnaming="^PC([0-9]+)$"
+teachernaming="prof*"
+teacherhost="2"
+netprefix="192.168.0"
+
+###################
+net=$netprefix".0/24"
+shopt -s nocasematch
 
 function ejecutar() {
     pregunta="$1"
@@ -27,7 +35,25 @@ function asignar_ip() {
 }
 
 function poner_nombre() {
+    # TODO: comprobar que no está en la lista de nombres en hosts.txt
     read -p "Indica su nombre:" name
+}
+
+function auto_ip() {
+    if [[ $name =~ $hostnaming ]]
+    then
+        ip=$netprefix"."${BASH_REMATCH[1]}
+	echo "Detectado nombre con patrón. Nueva IP:$ip"
+	return 0
+    else
+	if [[ $name =~ $teachernaming ]]
+	then
+	    ip=$netprefix"."$teacherhost
+	    echo "Detectado nombre del ordenador del profe. Nueva IP:$ip"
+	    return 0
+	fi
+    fi
+    return 1
 }
 
 function generar_dhcp() {
@@ -63,12 +89,18 @@ function escanear() {
             else
                 ejecutar "Nombre del nodo:${name}. Quieres cambiarle el nombre (s/n)?" poner_nombre
             fi
+
+	    # Comprobamos si podemos obtener la ip a partir del nombre
+	    auto_ip
+
             if [ $? -eq 0 ]; then
-                ejecutar "La ip actual es $ip. Quieres ponerle otra ip fija (s/n)?" preguntar_ip grabar_ip
+                #ejecutar "La ip actual es $ip. Quieres ponerle otra ip fija (s/n)?" preguntar_ip grabar_ip
+		grabar_ip
             else
-                echo "Nodo $mac no procesado."
+                echo "Nodo $mac no procesado. El nombre no cumple las especificaciones."
             fi
-            ejecutar "Dejar de procesar nodos (s/n)?" exit
+            ejecutar "Dejar de procesar nodos (s/n)?" "return 1"
+	    if [ $? -ne 0 ]; then return 1; fi
         else
             echo "$mac esta definido en hosts.txt"
         fi 
@@ -83,3 +115,4 @@ while [ $? -eq 0 ]; do
 done
 
 ejecutar "Quieres generar el archivo $dhcp (s/n)?" generar_dhcp 
+cat $dhcp
