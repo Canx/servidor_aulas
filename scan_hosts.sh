@@ -1,16 +1,16 @@
 #!/bin/bash
+# Los nombres de los hosts deben de ser del tipo pc11, pc12,... o profesor
 # PARAMETROS
 hosts="hosts.txt"
 scan="/tmp/scan.txt"
 dhcp="alumnos.dhcp"
-hostnaming="^PC([0-9]+)$"
-teachernaming="prof*"
+hostnaming="^pc([0-9]+)$"
+teachernaming="profesor"
 teacherhost="2"
 netprefix="192.168.0"
 
 ###################
 net=$netprefix".0/24"
-shopt -s nocasematch
 
 function ejecutar() {
     pregunta="$1"
@@ -36,7 +36,17 @@ function asignar_ip() {
 
 function poner_nombre() {
     # TODO: comprobar que no está en la lista de nombres en hosts.txt
-    read -p "Indica su nombre:" name
+    salir=0
+    while [ $salir -eq 0 ]; do
+        read -p "Indica su nombre:" name
+        result=`grep -c "$name" $hosts`
+        if [ "$result" != "0" ]
+	then
+	    echo "El nombre $name ya esta siendo usado en $hosts."
+	else
+	    salir=1;
+	fi
+    done
 }
 
 function auto_ip() {
@@ -99,8 +109,8 @@ function escanear() {
             else
                 echo "Nodo $mac no procesado. El nombre no cumple las especificaciones."
             fi
-            ejecutar "Dejar de procesar nodos (s/n)?" "return 1"
-	    if [ $? -ne 0 ]; then return 1; fi
+            #ejecutar "Dejar de procesar nodos (s/n)?" "return 1" "return 0"
+	    #if [ $? -ne 0 ]; then return 1; fi
         else
             echo "$mac esta definido en hosts.txt"
         fi 
